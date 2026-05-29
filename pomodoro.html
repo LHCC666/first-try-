@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --text: #e0e0e0;
+  --text-dim: #555;
+  --text-mid: #888;
+  --accent: #c4c4c4;
+  --ring-track: #1c1c1c;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  width: 380px;
+  padding: 80px 32px 60px;
+  text-align: center;
+}
+
+/* Header — removed, tabs serve as nav */
+
+/* Mode tabs — underline style */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 64px;
+}
+.tab {
+  padding: 0 0 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.tab:not(.active):hover { color: var(--text-mid); }
+
+/* Timer ring */
+.timer-wrapper {
+  position: relative;
+  width: 300px; height: 300px;
+  margin: 0 auto 48px;
+}
+.timer-ring {
+  transform: rotate(-90deg);
+  width: 300px; height: 300px;
+}
+.timer-ring .track {
+  fill: none;
+  stroke: var(--ring-track);
+  stroke-width: 2;
+}
+.timer-ring .progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s linear;
+}
+.timer-ring .progress.paused {
+  transition: stroke-dashoffset 0.35s ease;
+}
+.time-display {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.time-display .time {
+  font-size: 5rem;
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.time-display .label {
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 10px;
+}
+
+/* Controls */
+.controls {
+  display: flex; justify-content: center; align-items: center; gap: 28px;
+  margin-bottom: 40px;
+}
+.btn {
+  border: none; cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  outline: none;
+  background: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-main {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-dim);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-main:hover {
+  border-color: var(--text);
+  background: rgba(255,255,255,0.04);
+}
+.btn-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-icon:hover { color: var(--text); }
+
+/* Session markers — thin lines */
+.sessions {
+  display: flex; justify-content: center; gap: 12px;
+  margin-bottom: 40px;
+}
+.session-dot {
+  width: 20px; height: 2px;
+  border-radius: 1px;
+  background: var(--ring-track);
+  transition: all 0.4s;
+}
+.session-dot.done {
+  background: var(--accent);
+}
+
+/* Settings */
+.settings-toggle {
+  background: none; border: none;
+  color: var(--text-dim); font-size: 0.9rem;
+  cursor: pointer; padding: 8px;
+  transition: color 0.2s;
+  letter-spacing: 0.04em;
+}
+.settings-toggle:hover { color: var(--text); }
+.settings-panel {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.35s ease, margin 0.35s ease;
+  margin-top: 0;
+}
+.settings-panel.open { max-height: 200px; margin-top: 24px; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row label {
+  font-size: 0.78rem; font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--text-mid);
+}
+.settings-row input {
+  width: 56px; padding: 6px 0;
+  border: none; border-bottom: 1px solid #2a2a2a;
+  background: transparent; color: var(--text);
+  font-size: 0.85rem; text-align: center;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.settings-row input:focus { border-color: var(--accent); }
+
+/* Notification hint */
+.notif-hint {
+  font-size: 0.7rem; color: var(--text-dim);
+  margin-top: 24px; cursor: pointer;
+  letter-spacing: 0.04em;
+  opacity: 0.5; transition: opacity 0.2s;
+}
+.notif-hint:hover { opacity: 1; }
+.notif-hint.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-mode="focus">Focus</button>
+    <button class="tab" data-mode="shortBreak">Break</button>
+    <button class="tab" data-mode="longBreak">Rest</button>
+  </div>
+
+  <div class="timer-wrapper">
+    <svg class="timer-ring" viewBox="0 0 300 300">
+      <circle class="track" cx="150" cy="150" r="142"/>
+      <circle class="progress" id="progressRing" cx="150" cy="150" r="142"
+              stroke-dasharray="892.21" stroke-dashoffset="0"/>
+    </svg>
+    <div class="time-display">
+      <div class="time" id="timeDisplay">25:00</div>
+      <div class="label" id="modeLabel">Focus</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-icon" id="btnReset" title="Reset">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0 1 10.47-3.72M14 8a6 6 0 0 1-10.47 3.72"/><polyline points="8 2 10.9 4.3 8 6.5"/><polyline points="8 14 5.1 11.7 8 9.5"/></svg>
+    </button>
+    <button class="btn btn-main" id="btnMain">Start</button>
+    <button class="btn btn-icon" id="btnSkip" title="Skip">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="3,2 13,8 3,14"/><line x1="14" y1="2" x2="14" y2="14"/></svg>
+    </button>
+  </div>
+
+  <div class="sessions" id="sessionDots">
+    <span class="session-dot" data-i="0"></span>
+    <span class="session-dot" data-i="1"></span>
+    <span class="session-dot" data-i="2"></span>
+    <span class="session-dot" data-i="3"></span>
+  </div>
+
+  <button class="settings-toggle" id="btnSettings" title="Settings">Settings</button>
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-row">
+      <label>Focus</label>
+      <input type="number" id="setFocus" min="1" max="120" value="25"> min
+    </div>
+    <div class="settings-row">
+      <label>Break</label>
+      <input type="number" id="setShort" min="1" max="30" value="5"> min
+    </div>
+    <div class="settings-row">
+      <label>Rest</label>
+      <input type="number" id="setLong" min="1" max="60" value="15"> min
+    </div>
+  </div>
+
+  <div class="notif-hint hidden" id="notifHint">Enable notifications</div>
+</div>
+
+<script>
+const CIRCUMFERENCE = 2 * Math.PI * 142; // ~892.21
+
+let state = 'idle';
+let mode = 'focus';
+let timeLeft = 25 * 60;
+let totalTime = 25 * 60;
+let completedSessions = 0;
+let intervalId = null;
+
+let settings = {
+  focus: 25 * 60,
+  shortBreak: 5 * 60,
+  longBreak: 15 * 60,
+};
+
+const el = (s) => document.querySelector(s);
+const timeDisplay = el('#timeDisplay');
+const modeLabel = el('#modeLabel');
+const progressRing = el('#progressRing');
+const btnMain = el('#btnMain');
+const btnReset = el('#btnReset');
+const btnSkip = el('#btnSkip');
+const btnSettings = el('#btnSettings');
+const settingsPanel = el('#settingsPanel');
+const sessionDots = el('#sessionDots').children;
+const tabs = el('#tabs').children;
+const notifHint = el('#notifHint');
+const root = document.documentElement;
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('pomodoro-settings'));
+    if (saved) settings = saved;
+  } catch (_) {}
+  el('#setFocus').value = settings.focus / 60;
+  el('#setShort').value = settings.shortBreak / 60;
+  el('#setLong').value = settings.longBreak / 60;
+}
+
+function saveSettings() {
+  settings.focus = parseInt(el('#setFocus').value) * 60;
+  settings.shortBreak = parseInt(el('#setShort').value) * 60;
+  settings.longBreak = parseInt(el('#setLong').value) * 60;
+  localStorage.setItem('pomodoro-settings', JSON.stringify(settings));
+  if (mode === 'focus')      { timeLeft = settings.focus;      totalTime = settings.focus; }
+  if (mode === 'shortBreak') { timeLeft = settings.shortBreak; totalTime = settings.shortBreak; }
+  if (mode === 'longBreak')  { timeLeft = settings.longBreak;  totalTime = settings.longBreak; }
+  updateDisplay();
+}
+
+function setAccent(hex) {
+  root.style.setProperty('--accent', hex);
+}
+
+function setMode(newMode) {
+  mode = newMode;
+  stop();
+  state = 'idle';
+  if (mode === 'focus') {
+    timeLeft = settings.focus;
+    setAccent('#c4c4c4');
+    modeLabel.textContent = 'Focus';
+  } else if (mode === 'shortBreak') {
+    timeLeft = settings.shortBreak;
+    setAccent('#8a9fa8');
+    modeLabel.textContent = 'Break';
+  } else {
+    timeLeft = settings.longBreak;
+    setAccent('#8a90a8');
+    modeLabel.textContent = 'Rest';
+  }
+  totalTime = timeLeft;
+  btnMain.textContent = 'Start';
+  updateDisplay();
+  updateTabs();
+}
+
+function updateTabs() {
+  for (const tab of tabs) {
+    tab.classList.toggle('active', tab.dataset.mode === mode);
+  }
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
+function updateDisplay() {
+  timeDisplay.textContent = formatTime(timeLeft);
+  const progress = 1 - timeLeft / totalTime;
+  progressRing.style.strokeDashoffset = CIRCUMFERENCE * progress;
+  updateDots();
+}
+
+function updateDots() {
+  for (let i = 0; i < sessionDots.length; i++) {
+    sessionDots[i].classList.toggle('done', i < completedSessions);
+  }
+}
+
+function start() {
+  if (state === 'running') return;
+  if (state === 'paused') {
+    state = 'running';
+    progressRing.classList.remove('paused');
+    btnMain.textContent = 'Pause';
+    startInterval();
+    return;
+  }
+  state = 'running';
+  progressRing.classList.remove('paused');
+  btnMain.textContent = 'Pause';
+  startInterval();
+}
+
+function pause() {
+  state = 'paused';
+  progressRing.classList.add('paused');
+  btnMain.textContent = 'Resume';
+  clearInterval(intervalId);
+  intervalId = null;
+}
+
+function stop() {
+  clearInterval(intervalId);
+  intervalId = null;
+  state = 'idle';
+  progressRing.classList.remove('paused');
+  btnMain.textContent = 'Start';
+  if (mode === 'focus')      timeLeft = settings.focus;
+  if (mode === 'shortBreak') timeLeft = settings.shortBreak;
+  if (mode === 'longBreak')  timeLeft = settings.longBreak;
+  totalTime = timeLeft;
+  updateDisplay();
+}
+
+function reset() {
+  stop();
+  updateDisplay();
+}
+
+function skip() {
+  handleTimerEnd();
+}
+
+function startInterval() {
+  intervalId = setInterval(() => {
+    timeLeft--;
+    updateDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(intervalId);
+      intervalId = null;
+      handleTimerEnd();
+    }
+  }, 1000);
+}
+
+function handleTimerEnd() {
+  clearInterval(intervalId);
+  intervalId = null;
+  playSound();
+  sendNotification();
+
+  if (mode === 'focus') {
+    completedSessions++;
+    updateDots();
+    if (completedSessions >= 4) {
+      completedSessions = 0;
+      setMode('longBreak');
+    } else {
+      setMode('shortBreak');
+    }
+  } else {
+    setMode('focus');
+  }
+  start();
+}
+
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playSound() {
+  try {
+    const ctx = getAudioCtx();
+    [0, 0.25, 0.5].forEach((delay, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = i === 2 ? 1047 : 784;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.4);
+    });
+  } catch (_) {}
+}
+
+function sendNotification() {
+  if (Notification.permission === 'granted') {
+    const title = mode === 'focus' ? 'Focus session complete' : 'Break over';
+    const body = mode === 'focus' ? 'Time for a break.' : 'Ready for the next session.';
+    new Notification(title, { body });
+  }
+}
+
+function requestNotification() {
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') notifHint.classList.add('hidden');
+    });
+  }
+}
+
+btnMain.addEventListener('click', () => {
+  if (state === 'running') pause();
+  else start();
+});
+
+btnReset.addEventListener('click', reset);
+btnSkip.addEventListener('click', skip);
+
+btnSettings.addEventListener('click', () => {
+  settingsPanel.classList.toggle('open');
+});
+
+el('#tabs').addEventListener('click', (e) => {
+  if (e.target.classList.contains('tab')) {
+    setMode(e.target.dataset.mode);
+  }
+});
+
+el('#setFocus').addEventListener('change', saveSettings);
+el('#setShort').addEventListener('change', saveSettings);
+el('#setLong').addEventListener('change', saveSettings);
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && e.target === document.body) {
+    e.preventDefault();
+    if (state === 'running') pause(); else start();
+  }
+  if (e.code === 'KeyR' && e.target === document.body) reset();
+  if (e.code === 'KeyS' && e.target === document.body) skip();
+});
+
+loadSettings();
+setMode('focus');
+updateDisplay();
+
+if (Notification.permission === 'default') {
+  notifHint.classList.remove('hidden');
+}
+if (Notification.permission === 'granted' || Notification.permission === 'denied') {
+  notifHint.classList.add('hidden');
+}
+notifHint.addEventListener('click', requestNotification);
+</script>
+</body>
+</html>
