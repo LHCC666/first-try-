@@ -1,5 +1,7 @@
 # 📚 LAW Learning · 法学学习
 
+*𝓫𝓮𝓵𝓸𝓷𝓰 𝓽𝓸 𝓐𝓷1𝓪𝓻𝓮*
+
 > 交互式法学思维导图 + 闪卡复习系统
 
 🌐 **在线访问：https://lhcc666.github.io/LAW-learning/**
@@ -32,6 +34,3 @@
 ---
 
 *Built with ❤️ using Claude Code & d3.js*
-
-belong to An1are
-belong to An1are
