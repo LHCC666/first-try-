@@ -46,12 +46,18 @@
   .toolbar button:hover, .toolbar a:hover {
     background: #e94560; color: #fff; transform: scale(1.1);
   }
+  .markmap-node foreignObject {
+    width: auto !important;
+    height: auto !important;
+  }
   .markmap-node foreignObject > div {
     white-space: normal !important;
-    word-break: normal !important;
+    word-break: break-all !important;
     overflow-wrap: break-word !important;
     padding: 4px 10px !important;
     line-height: 1.5 !important;
+    width: fit-content !important;
+    min-width: max-content !important;
   }
   .markmap-node[data-depth="0"] > foreignObject > div { font-size: 22px !important; font-weight: 900 !important; color: #1a1a2e !important; }
   .markmap-node[data-depth="1"] > foreignObject > div { font-size: 17px !important; font-weight: 700 !important; color: #c0392b !important; }
@@ -635,38 +641,6 @@ function render() {
 }
 
 render();
-
-// ====== 修复节点宽度：MutationObserver 实时监听 ======
-const nodeWidths2 = [600, 540, 480, 420, 360, 300, 260];
-function fixOneNode2(node) {
-  const fo = node.querySelector('foreignObject');
-  if (!fo) return;
-  const depth = parseInt(node.getAttribute('data-depth') || '0');
-  const w = nodeWidths2[Math.min(depth, nodeWidths2.length - 1)];
-  fo.setAttribute('width', w);
-  const div = fo.querySelector('div');
-  if (div) div.style.width = (w - 16) + 'px';
-}
-
-function fixAllNodes2() {
-  const svg = document.querySelector('#mindmap svg');
-  if (!svg) return;
-  svg.querySelectorAll('.markmap-node').forEach(fixOneNode2);
-}
-
-const mindmapEl2 = document.getElementById('mindmap');
-const observer2 = new MutationObserver(mutations => {
-  let hasNew = false;
-  for (const m of mutations) {
-    for (const n of m.addedNodes) {
-      if (n.nodeType === 1 && (n.classList?.contains('markmap-node') || n.querySelector?.('.markmap-node'))) {
-        hasNew = true; break;
-      }
-    }
-  }
-  if (hasNew) requestAnimationFrame(() => requestAnimationFrame(fixAllNodes2));
-});
-observer2.observe(mindmapEl2, { childList: true, subtree: true });
 
 function fit() { mm.fit(); }
 
