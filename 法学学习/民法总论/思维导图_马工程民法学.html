@@ -46,18 +46,9 @@
   .toolbar button:hover, .toolbar a:hover {
     background: #e94560; color: #fff; transform: scale(1.1);
   }
-  .markmap-node foreignObject {
-    width: auto !important;
-    height: auto !important;
-  }
   .markmap-node foreignObject > div {
-    white-space: normal !important;
-    word-break: break-all !important;
-    overflow-wrap: break-word !important;
-    padding: 4px 10px !important;
-    line-height: 1.5 !important;
-    width: fit-content !important;
-    min-width: max-content !important;
+    word-break: keep-all !important; white-space: normal !important;
+    padding: 2px 6px !important; line-height: 1.4 !important;
   }
   .markmap-node[data-depth="0"] > foreignObject > div { font-size: 22px !important; font-weight: 900 !important; color: #1a1a2e !important; }
   .markmap-node[data-depth="1"] > foreignObject > div { font-size: 17px !important; font-weight: 700 !important; color: #c0392b !important; }
@@ -629,12 +620,12 @@ function render() {
     autoFit: false,
     colorFreezeLevel: 3,
     duration: 300,
-    maxWidth: 600,
+    maxWidth: 420,
     initialExpandLevel: 3,
     pan: true,
     zoom: true,
     fitRatio: 0.95,
-    spacingHorizontal: 100,
+    spacingHorizontal: 90,
     spacingVertical: 10,
   }, root);
   setTimeout(() => mm.fit(), 300);
@@ -646,14 +637,23 @@ function fit() { mm.fit(); }
 
 function expandAll() {
   const expanded = JSON.parse(JSON.stringify(root));
-  function expand(node) { if (node.payload) delete node.payload.fold; if (node.children) node.children.forEach(expand); }
+  function expand(node) {
+    if (node.payload) delete node.payload.fold;
+    if (node.children) node.children.forEach(expand);
+  }
   expand(expanded);
   mm.setData(expanded);
 }
 
 function collapseAll() {
   const collapsed = JSON.parse(JSON.stringify(root));
-  function collapse(node) { if (node.depth >= 2) { node.payload = node.payload || {}; node.payload.fold = 1; } if (node.children) node.children.forEach(collapse); }
+  function collapse(node) {
+    if (node.depth >= 2) {
+      node.payload = node.payload || {};
+      node.payload.fold = 1;
+    }
+    if (node.children) node.children.forEach(collapse);
+  }
   collapse(collapsed);
   mm.setData(collapsed);
 }
@@ -720,13 +720,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'e' || e.key === 'E') { e.preventDefault(); expandAll(); }
   if (e.key === 'c' || e.key === 'C') { e.preventDefault(); collapseAll(); }
   if (e.key === '/' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); document.getElementById('searchInput').focus(); }
-});
-
-// 点击展开/折叠节点后也修复
-document.addEventListener('click', e => {
-  if (e.target.closest('.markmap-node circle') || e.target.closest('.markmap-node')) {
-    setTimeout(fixNodeSizes, 500);
-  }
 });
 </script>
 </body>
