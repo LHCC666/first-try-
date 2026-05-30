@@ -1036,13 +1036,18 @@ function gotoMatch(idx) {
     const svgRect = svgEl.getBoundingClientRect();
     if (nodeRect.width === 0 && nodeRect.height === 0) return;
 
-    const dx = (svgRect.left + svgRect.width / 2) - (nodeRect.left + nodeRect.width / 2);
-    const dy = (svgRect.top + svgRect.height / 2) - (nodeRect.top + nodeRect.height / 2);
+    const svgCX = svgRect.left + svgRect.width / 2;
+    const svgCY = svgRect.top + svgRect.height / 2;
+    const ncx = nodeRect.left + nodeRect.width / 2;
+    const ncy = nodeRect.top + nodeRect.height / 2;
+    const targetK = 3; // 聚焦缩放倍数
 
-    // 优先用 markmap 自己的 zoom 做变换（标准d3路径）
     if (mm && mm.zoom) {
       const t = d3.zoomTransform(svgEl);
-      const nt = d3.zoomIdentity.translate(t.x + dx, t.y + dy).scale(t.k);
+      // 节点在SVG坐标系中的位置
+      const sx = (ncx - t.x) / t.k;
+      const sy = (ncy - t.y) / t.k;
+      const nt = d3.zoomIdentity.translate(svgCX - targetK * sx, svgCY - targetK * sy).scale(targetK);
       d3.select(svgEl).transition().duration(500).call(mm.zoom.transform, nt);
       return;
     }
@@ -1051,9 +1056,13 @@ function gotoMatch(idx) {
     if (!gEl || gEl.tagName !== 'g') return;
     let k = 1, x = 0, y = 0;
     if (svgEl.__zoom) { k = svgEl.__zoom.k; x = svgEl.__zoom.x; y = svgEl.__zoom.y; }
+    const sx = (ncx - x) / k;
+    const sy = (ncy - y) / k;
+    const newX = svgCX - targetK * sx;
+    const newY = svgCY - targetK * sy;
     d3.select(gEl).transition().duration(500)
-      .attr('transform', `translate(${x + dx}, ${y + dy}) scale(${k})`);
-    if (svgEl.__zoom) { svgEl.__zoom.x = x + dx; svgEl.__zoom.y = y + dy; }
+      .attr('transform', `translate(${newX}, ${newY}) scale(${targetK})`);
+    if (svgEl.__zoom) { svgEl.__zoom.x = newX; svgEl.__zoom.y = newY; svgEl.__zoom.k = targetK; }
   } catch(e) {
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
