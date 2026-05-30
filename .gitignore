@@ -6,6 +6,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# 大型教材文件（不提交到Git）
+*.pdf
+*.epub
+
 # 系统文件
 .DS_Store
 Thumbs.db
