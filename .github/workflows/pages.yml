@@ -1,0 +1,30 @@
+name: 部署 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+      - name: 上传
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: '.'
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4
