@@ -710,41 +710,36 @@ function gotoMatch(idx) {
   matches.forEach(n => n.classList.remove('match-current'));
   const node = matches[matchIdx];
   node.classList.add('match-current');
-  // 确保节点可见：逐个展开被折叠的父级分支
+  // 确保节点可见：展开被折叠的父级
   let p = node.parentElement;
   while (p && p.id !== 'mindmap') {
-    if (p.style.display === 'none') p.style.display = '';
-    if (p.tagName === 'g') { try { p.removeAttribute('display'); } catch(e) {} }
+    p.style.display = '';
+    try { p.removeAttribute('display'); } catch(e) {}
     p = p.parentElement;
   }
 
   const svgEl = document.getElementById('mindmap');
-  const gEl = svgEl ? svgEl.firstElementChild : null;
-  if (!gEl || gEl.tagName !== 'g') return;
-
   try {
     const nodeRect = node.getBoundingClientRect();
     const svgRect = svgEl.getBoundingClientRect();
-    if (nodeRect.width === 0 && nodeRect.height === 0) throw new Error('hidden');
+    if (nodeRect.width === 0 && nodeRect.height === 0) return;
 
-    const ncx = nodeRect.left + nodeRect.width / 2;
-    const ncy = nodeRect.top + nodeRect.height / 2;
-    const scx = svgRect.left + svgRect.width / 2;
-    const scy = svgRect.top + svgRect.height / 2;
-    const dx = scx - ncx;
-    const dy = scy - ncy;
+    const dx = (svgRect.left + svgRect.width / 2) - (nodeRect.left + nodeRect.width / 2);
+    const dy = (svgRect.top + svgRect.height / 2) - (nodeRect.top + nodeRect.height / 2);
 
+    if (mm && mm.zoom) {
+      const t = d3.zoomTransform(svgEl);
+      const nt = d3.zoomIdentity.translate(t.x + dx, t.y + dy).scale(t.k);
+      d3.select(svgEl).transition().duration(500).call(mm.zoom.transform, nt);
+      return;
+    }
+    const gEl = svgEl.firstElementChild;
+    if (!gEl || gEl.tagName !== 'g') return;
     let k = 1, x = 0, y = 0;
     if (svgEl.__zoom) { k = svgEl.__zoom.k; x = svgEl.__zoom.x; y = svgEl.__zoom.y; }
-
-    const newX = x + dx;
-    const newY = y + dy;
-
-    d3.select(gEl)
-      .transition().duration(500)
-      .attr('transform', `translate(${newX}, ${newY}) scale(${k})`);
-
-    if (svgEl.__zoom) { svgEl.__zoom.x = newX; svgEl.__zoom.y = newY; }
+    d3.select(gEl).transition().duration(500)
+      .attr('transform', `translate(${x + dx}, ${y + dy}) scale(${k})`);
+    if (svgEl.__zoom) { svgEl.__zoom.x = x + dx; svgEl.__zoom.y = y + dy; }
   } catch(e) {
     node.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
