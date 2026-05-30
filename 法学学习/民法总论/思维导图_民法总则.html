@@ -8,6 +8,33 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #f5f0eb; }
   #mindmap { width: 100vw; height: 100vh; }
+  /* 搜索栏 */
+  .search-bar {
+    position: fixed; top: 16px; left: 16px; z-index: 100;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .search-bar input {
+    width: 240px; height: 42px; padding: 0 14px;
+    border: 1.5px solid #ddd; border-radius: 21px;
+    font-size: 0.9em; font-family: inherit;
+    outline: none; background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+  }
+  .search-bar input:focus { border-color: #e94560; width: 300px; }
+  .search-bar input::placeholder { color: #bbb; }
+  .search-info {
+    font-size: 0.75em; color: #999; min-width: 50px;
+  }
+  .search-bar button {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer; font-size: 1em; color: #555;
+    transition: all 0.15s;
+  }
+  .search-bar button:hover { background: #e94560; color: #fff; }
+  .match-highlight { fill: #ffe066 !important; stroke: #e94560 !important; stroke-width: 2px !important; }
+  .match-current { fill: #e94560 !important; stroke: #c0392b !important; stroke-width: 3px !important; color: #fff !important; }
   /* 控制栏 */
   .toolbar {
     position: fixed; top: 16px; right: 16px; z-index: 100;
@@ -28,6 +55,13 @@
 <body>
 
 <svg id="mindmap"></svg>
+
+<div class="search-bar">
+  <input id="searchInput" type="text" placeholder="搜索知识点...（回车跳转）" oninput="doSearch()" onkeydown="handleSearchKey(event)">
+  <button onclick="prevMatch()" title="上一个">▲</button>
+  <button onclick="nextMatch()" title="下一个">▼</button>
+  <span class="search-info" id="searchInfo"></span>
+</div>
 
 <div class="toolbar">
   <button onclick="fit()" title="适应屏幕">🔍</button>
@@ -435,15 +469,16 @@ const { Transformer } = window.markmap;
 
 const transformer = new Transformer();
 const { root } = transformer.transform(markdown);
-const { styles, scripts } = transformer.getAssets();
 
 let mm;
+let matches = [];
+let matchIdx = -1;
 
 function render() {
   mm = Markmap.create('#mindmap', {
-    autoFit: true,
+    autoFit: false,
     colorFreezeLevel: 3,
-    duration: 500,
+    duration: 300,
     maxWidth: 280,
     initialExpandLevel: 3,
     pan: true,
@@ -452,12 +487,24 @@ function render() {
     spacingHorizontal: 60,
     spacingVertical: 10,
   }, root);
+  setTimeout(() => mm.fit(), 300);
 }
 
 render();
 
+// ====== 工具栏 ======
 function fit() { mm.fit(); }
-function expandAll() { mm.setData(root); mm.fit(); }
+
+function expandAll() {
+  const expanded = JSON.parse(JSON.stringify(root));
+  function expand(node) {
+    if (node.payload) delete node.payload.fold;
+    if (node.children) node.children.forEach(expand);
+  }
+  expand(expanded);
+  mm.setData(expanded);
+}
+
 function collapseAll() {
   const collapsed = JSON.parse(JSON.stringify(root));
   function collapse(node) {
@@ -469,14 +516,92 @@ function collapseAll() {
   }
   collapse(collapsed);
   mm.setData(collapsed);
-  mm.fit();
 }
 
-// 键盘快捷键
+// ====== 搜索功能 ======
+function getAllTextNodes() {
+  const svg = document.querySelector('#mindmap svg');
+  if (!svg) return [];
+  return Array.from(svg.querySelectorAll('.markmap-node'));
+}
+
+function getNodeText(node) {
+  return (node.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function clearHighlights() {
+  matches.forEach(n => {
+    n.classList.remove('match-highlight', 'match-current');
+  });
+  matches = [];
+  matchIdx = -1;
+  document.getElementById('searchInfo').textContent = '';
+}
+
+function doSearch() {
+  clearHighlights();
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!query || query.length < 1) return;
+
+  const nodes = getAllTextNodes();
+  matches = nodes.filter(n => getNodeText(n).includes(query));
+
+  if (matches.length === 0) {
+    document.getElementById('searchInfo').textContent = '0/0';
+    return;
+  }
+
+  matches.forEach(n => n.classList.add('match-highlight'));
+  matchIdx = 0;
+  gotoMatch(0);
+}
+
+function gotoMatch(idx) {
+  if (matches.length === 0) return;
+  matchIdx = ((idx % matches.length) + matches.length) % matches.length;
+  document.getElementById('searchInfo').textContent = `${matchIdx + 1}/${matches.length}`;
+
+  matches.forEach(n => n.classList.remove('match-current'));
+  const node = matches[matchIdx];
+  node.classList.add('match-current');
+  node.classList.remove('match-highlight');
+  node.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+}
+
+function nextMatch() {
+  if (matches.length === 0) { doSearch(); return; }
+  matches[matchIdx]?.classList.add('match-highlight');
+  gotoMatch(matchIdx + 1);
+}
+
+function prevMatch() {
+  if (matches.length === 0) { doSearch(); return; }
+  matches[matchIdx]?.classList.add('match-highlight');
+  gotoMatch(matchIdx - 1);
+}
+
+function handleSearchKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (matches.length === 0) doSearch();
+    else nextMatch();
+  }
+  if (e.key === 'Escape') {
+    document.getElementById('searchInput').value = '';
+    clearHighlights();
+  }
+}
+
+// ====== 全局键盘快捷键 ======
 document.addEventListener('keydown', e => {
-  if (e.key === 'f' || e.key === 'F') fit();
-  if (e.key === 'e' || e.key === 'E') expandAll();
-  if (e.key === 'c' || e.key === 'C') collapseAll();
+  if (document.activeElement === document.getElementById('searchInput')) return;
+  if (e.key === 'f' || e.key === 'F') { e.preventDefault(); fit(); }
+  if (e.key === 'e' || e.key === 'E') { e.preventDefault(); expandAll(); }
+  if (e.key === 'c' || e.key === 'C') { e.preventDefault(); collapseAll(); }
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
 });
 </script>
 </body>
