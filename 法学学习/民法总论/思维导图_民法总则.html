@@ -50,6 +50,13 @@
   .toolbar button:hover, .toolbar a:hover {
     background: #e94560; color: #fff; transform: scale(1.1);
   }
+  /* 防止文字截断 */
+  .markmap-node foreignObject > div {
+    word-break: keep-all !important;
+    white-space: normal !important;
+    padding: 2px 6px !important;
+    line-height: 1.4 !important;
+  }
   /* 层级字体区分 */
   .markmap-node[data-depth="0"] > foreignObject > div {
     font-size: 22px !important; font-weight: 900 !important; color: #1a1a2e !important;
@@ -499,12 +506,12 @@ function render() {
     autoFit: false,
     colorFreezeLevel: 3,
     duration: 300,
-    maxWidth: 280,
+    maxWidth: 400,
     initialExpandLevel: 3,
     pan: true,
     zoom: true,
     fitRatio: 0.95,
-    spacingHorizontal: 60,
+    spacingHorizontal: 80,
     spacingVertical: 10,
   }, root);
   setTimeout(() => mm.fit(), 300);
