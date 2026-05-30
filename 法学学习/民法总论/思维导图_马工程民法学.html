@@ -47,9 +47,14 @@
     background: #e94560; color: #fff; transform: scale(1.1);
   }
   .markmap-node foreignObject > div {
-    word-break: keep-all !important; white-space: normal !important;
-    padding: 2px 6px !important; line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    padding: 4px 10px !important;
+    line-height: 1.5 !important;
+    overflow: visible !important;
   }
+  .markmap-node foreignObject { overflow: visible !important; }
   .markmap-node[data-depth="0"] > foreignObject > div { font-size: 22px !important; font-weight: 900 !important; color: #1a1a2e !important; }
   .markmap-node[data-depth="1"] > foreignObject > div { font-size: 17px !important; font-weight: 700 !important; color: #c0392b !important; }
   .markmap-node[data-depth="2"] > foreignObject > div { font-size: 14px !important; font-weight: 600 !important; color: #2c3e50 !important; }
