@@ -987,7 +987,7 @@ function collapseAll() {
 }
 
 function getAllTextNodes() {
-  const svg = document.querySelector('#mindmap svg');
+  const svg = document.getElementById('mindmap');
   if (!svg) return [];
   return Array.from(svg.querySelectorAll('.markmap-node'));
 }
@@ -1021,26 +1021,25 @@ function gotoMatch(idx) {
   matches.forEach(n => n.classList.remove('match-current'));
   const node = matches[matchIdx];
   node.classList.add('match-current');
-  const svgEl = document.querySelector('#mindmap svg');
-  if (svgEl) {
-    let gEl = svgEl.querySelector(':scope > g');
-    if (!gEl) gEl = svgEl.firstElementChild;
-    if (gEl && gEl.tagName === 'g') {
-      try {
-        const bbox = node.getBBox();
-        const svgW = svgEl.clientWidth || window.innerWidth;
-        const svgH = svgEl.clientHeight || window.innerHeight;
-        const t = d3.zoomTransform(gEl);
-        const k = t.k;
-        const tx = svgW / 2 - (bbox.x + bbox.width / 2) * k;
-        const ty = svgH / 2 - (bbox.y + bbox.height / 2) * k;
-        d3.select(gEl).transition().duration(400).attr('transform', `translate(${tx}, ${ty}) scale(${k})`);
-        gEl.__zoom = d3.zoomIdentity.translate(tx, ty).scale(k);
-        return;
-      } catch(e) {}
+  const svgEl = document.getElementById('mindmap');
+  const gEl = svgEl ? svgEl.firstElementChild : null;
+  if (gEl && gEl.tagName === 'g') {
+    try {
+      const bbox = node.getBBox();
+      const svgW = svgEl.clientWidth || window.innerWidth;
+      const svgH = svgEl.clientHeight || window.innerHeight;
+      let k = 1;
+      if (svgEl.__zoom) k = svgEl.__zoom.k;
+      const cx = bbox.x + bbox.width / 2;
+      const cy = bbox.y + bbox.height / 2;
+      const newTx = svgW / 2 - cx * k;
+      const newTy = svgH / 2 - cy * k;
+      d3.select(gEl).transition().duration(500).attr('transform', `translate(${newTx}, ${newTy}) scale(${k})`);
+      if (svgEl.__zoom) { svgEl.__zoom.x = newTx; svgEl.__zoom.y = newTy; }
+    } catch(e) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
-  node.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
 }
 
 function nextMatch() {
