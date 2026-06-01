@@ -1027,7 +1027,13 @@ function render() {
   setTimeout(() => mm.fit(), 300);
 }
 
-render();
+setTimeout(() => {
+  try {
+    render();
+  } catch(e) {
+    document.body.innerHTML += '<div style="position:fixed;bottom:10px;left:10px;background:red;color:#fff;padding:8px 16px;border-radius:8px;z-index:9999;font-size:14px"><b>渲染错误:</b> ' + e.message + '</div>';
+  }
+}, 300);
 
 function fit() { mm.fit(); }
 
