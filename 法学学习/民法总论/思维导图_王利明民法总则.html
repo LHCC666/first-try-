@@ -1088,7 +1088,40 @@
       try { p.removeAttribute('display'); } catch(e2) {}
       p = p.parentElement;
     }
-    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // d3 zoom: 移动到搜索结果并 2.0x 放大
+    var svgEl = document.getElementById('mindmap');
+    try {
+      var nodeRect = node.getBoundingClientRect();
+      var svgRect = svgEl.getBoundingClientRect();
+      if (nodeRect.width === 0 && nodeRect.height === 0) return;
+      var svgCX = svgRect.left + svgRect.width / 2;
+      var svgCY = svgRect.top + svgRect.height / 2;
+      var ncx = nodeRect.left + nodeRect.width / 2;
+      var ncy = nodeRect.top + nodeRect.height / 2;
+      var targetK = 2;
+      if (mm && mm.zoom) {
+        var t = d3.zoomTransform(svgEl);
+        var sx = (ncx - t.x) / t.k;
+        var sy = (ncy - t.y) / t.k;
+        var nt = d3.zoomIdentity.translate(svgCX - targetK * sx, svgCY - targetK * sy).scale(targetK);
+        d3.select(svgEl).transition().duration(500).call(mm.zoom.transform, nt);
+        return;
+      }
+      var gEl = svgEl.firstElementChild;
+      if (gEl && gEl.tagName === 'g') {
+        var k = 1, x = 0, y = 0;
+        if (svgEl.__zoom) { k = svgEl.__zoom.k; x = svgEl.__zoom.x; y = svgEl.__zoom.y; }
+        var sx2 = (ncx - x) / k;
+        var sy2 = (ncy - y) / k;
+        var newX = svgCX - targetK * sx2;
+        var newY = svgCY - targetK * sy2;
+        d3.select(gEl).transition().duration(500)
+          .attr('transform', 'translate(' + newX + ', ' + newY + ') scale(' + targetK + ')');
+        if (svgEl.__zoom) { svgEl.__zoom.x = newX; svgEl.__zoom.y = newY; svgEl.__zoom.k = targetK; }
+      }
+    } catch(e) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   window.nextMatch = function() {
