@@ -1,0 +1,8 @@
+# PDF 文件不上传仓库（本地生成，用的时候再跑脚本）
+每日指南/*.pdf
+_weekly_review/*.pdf
+
+# 临时文件
+*.tmp
+_temp_*
+__pycache__/
