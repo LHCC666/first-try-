@@ -20,15 +20,14 @@ from reportlab.platypus.flowables import HRFlowable
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
-# ── 注册中文字体 ─────────────────────────────────────────────
+# ── 注册中文字体（全用.ttf嵌入，安卓不乱码）─────────────────
 FONT_DIR = "C:/Windows/Fonts"
 
-pdfmetrics.registerFont(TTFont("SimSun", f"{FONT_DIR}/simsun.ttc", subfontIndex=0))
-pdfmetrics.registerFont(TTFont("SimHei", f"{FONT_DIR}/simhei.ttf"))
-pdfmetrics.registerFont(TTFont("SimKai", f"{FONT_DIR}/simkai.ttf"))
-pdfmetrics.registerFont(TTFont("SimFang", f"{FONT_DIR}/simfang.ttf"))
-pdfmetrics.registerFont(TTFont("NotoSansSC", f"{FONT_DIR}/NotoSansSC-VF.ttf"))
-pdfmetrics.registerFont(TTFont("NotoSerifSC", f"{FONT_DIR}/NotoSerifSC-VF.ttf"))
+# 用 Noto 开源字体替代 Windows 专有字体，保证跨平台可读
+pdfmetrics.registerFont(TTFont("SongTi", f"{FONT_DIR}/NotoSerifSC-VF.ttf"))       # 正文
+pdfmetrics.registerFont(TTFont("HeiTi", f"{FONT_DIR}/NotoSansSC-VF.ttf"))         # 标题
+pdfmetrics.registerFont(TTFont("KaiTi", f"{FONT_DIR}/simkai.ttf"))                 # 引用
+pdfmetrics.registerFont(TTFont("NotoSansSC", f"{FONT_DIR}/NotoSansSC-VF.ttf"))     # 辅助
 
 # ── 颜色方案 ─────────────────────────────────────────────────
 C_PRIMARY    = HexColor("#1a3a5c")   # 深蓝 — 主标题
@@ -55,7 +54,7 @@ def make_styles():
     ss = {}
 
     ss['title'] = ParagraphStyle(
-        'CTitle', fontName='SimHei', fontSize=22, leading=32,
+        'CTitle', fontName='HeiTi', fontSize=22, leading=32,
         textColor=C_PRIMARY, alignment=TA_CENTER, spaceAfter=6*mm,
     )
     ss['subtitle'] = ParagraphStyle(
@@ -63,29 +62,29 @@ def make_styles():
         textColor=C_GRAY, alignment=TA_CENTER, spaceAfter=8*mm,
     )
     ss['h1'] = ParagraphStyle(
-        'CH1', fontName='SimHei', fontSize=15, leading=22,
+        'CH1', fontName='HeiTi', fontSize=15, leading=22,
         textColor=C_PRIMARY, spaceBefore=8*mm, spaceAfter=4*mm,
         borderPadding=(0, 0, 2, 0),
     )
     ss['h2'] = ParagraphStyle(
-        'CH2', fontName='SimHei', fontSize=12, leading=18,
+        'CH2', fontName='HeiTi', fontSize=12, leading=18,
         textColor=C_SECONDARY, spaceBefore=5*mm, spaceAfter=2*mm,
     )
     ss['h3'] = ParagraphStyle(
-        'CH3', fontName='SimKai', fontSize=11, leading=17,
+        'CH3', fontName='KaiTi', fontSize=11, leading=17,
         textColor=C_SECONDARY, spaceBefore=3*mm, spaceAfter=1.5*mm,
     )
     ss['body'] = ParagraphStyle(
-        'CBody', fontName='SimSun', fontSize=10, leading=18,
+        'CBody', fontName='SongTi', fontSize=10, leading=18,
         textColor=C_BODY, alignment=TA_JUSTIFY, spaceAfter=1.5*mm,
         firstLineIndent=2*10,  # 2字符缩进
     )
     ss['body_ni'] = ParagraphStyle(  # no indent
-        'CBodyNI', fontName='SimSun', fontSize=10, leading=18,
+        'CBodyNI', fontName='SongTi', fontSize=10, leading=18,
         textColor=C_BODY, alignment=TA_JUSTIFY, spaceAfter=1.5*mm,
     )
     ss['quote'] = ParagraphStyle(
-        'CQuote', fontName='SimKai', fontSize=10, leading=18,
+        'CQuote', fontName='KaiTi', fontSize=10, leading=18,
         textColor=HexColor("#5b4636"), spaceAfter=1.5*mm,
     )
     ss['small'] = ParagraphStyle(
@@ -93,23 +92,23 @@ def make_styles():
         textColor=C_GRAY,
     )
     ss['table_header'] = ParagraphStyle(
-        'CTH', fontName='SimHei', fontSize=9, leading=14,
+        'CTH', fontName='HeiTi', fontSize=9, leading=14,
         textColor=white,
     )
     ss['table_cell'] = ParagraphStyle(
-        'CTC', fontName='SimSun', fontSize=9, leading=15,
+        'CTC', fontName='SongTi', fontSize=9, leading=15,
         textColor=C_BODY,
     )
     ss['table_cell_bold'] = ParagraphStyle(
-        'CTCB', fontName='SimHei', fontSize=9, leading=15,
+        'CTCB', fontName='HeiTi', fontSize=9, leading=15,
         textColor=C_BODY,
     )
     ss['stat_label'] = ParagraphStyle(
-        'CStatLabel', fontName='SimHei', fontSize=10, leading=20,
+        'CStatLabel', fontName='HeiTi', fontSize=10, leading=20,
         textColor=C_GRAY,
     )
     ss['stat_value'] = ParagraphStyle(
-        'CStatValue', fontName='SimHei', fontSize=18, leading=24,
+        'CStatValue', fontName='HeiTi', fontSize=18, leading=24,
         textColor=C_PRIMARY,
     )
     return ss
@@ -182,7 +181,7 @@ def make_table(headers, rows, col_widths=None):
     style_cmds = [
         ('BACKGROUND', (0, 0), (-1, 0), C_TABLE_HDR),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
-        ('FONTNAME', (0, 0), (-1, 0), 'SimHei'),
+        ('FONTNAME', (0, 0), (-1, 0), 'HeiTi'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
         ('TOPPADDING', (0, 0), (-1, 0), 6),

@@ -13,9 +13,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 # ── Fonts ──
 FONT_DIR = "C:/Windows/Fonts"
-pdfmetrics.registerFont(TTFont("SimSun", f"{FONT_DIR}/simsun.ttc", subfontIndex=0))
-pdfmetrics.registerFont(TTFont("SimHei", f"{FONT_DIR}/simhei.ttf"))
-pdfmetrics.registerFont(TTFont("SimKai", f"{FONT_DIR}/simkai.ttf"))
+pdfmetrics.registerFont(TTFont("SongTi", f"{FONT_DIR}/NotoSerifSC-VF.ttf"))
+pdfmetrics.registerFont(TTFont("HeiTi", f"{FONT_DIR}/NotoSansSC-VF.ttf"))
+pdfmetrics.registerFont(TTFont("KaiTi", f"{FONT_DIR}/simkai.ttf"))
 pdfmetrics.registerFont(TTFont("NotoSansSC", f"{FONT_DIR}/NotoSansSC-VF.ttf"))
 
 # ── Colors ──
@@ -35,27 +35,27 @@ MARGIN = 2.0 * cm
 
 # ── Styles ──
 S = {}
-S['title'] = ParagraphStyle('WT', fontName='SimHei', fontSize=20, leading=30,
+S['title'] = ParagraphStyle('WT', fontName='HeiTi', fontSize=20, leading=30,
                              textColor=C_PRIMARY, alignment=TA_CENTER, spaceAfter=4*mm)
 S['subtitle'] = ParagraphStyle('WS', fontName='NotoSansSC', fontSize=9, leading=14,
                                 textColor=C_GRAY, alignment=TA_CENTER, spaceAfter=6*mm)
-S['h1'] = ParagraphStyle('WH1', fontName='SimHei', fontSize=14, leading=20,
+S['h1'] = ParagraphStyle('WH1', fontName='HeiTi', fontSize=14, leading=20,
                           textColor=C_PRIMARY, spaceBefore=6*mm, spaceAfter=3*mm)
-S['h2'] = ParagraphStyle('WH2', fontName='SimHei', fontSize=12, leading=18,
+S['h2'] = ParagraphStyle('WH2', fontName='HeiTi', fontSize=12, leading=18,
                           textColor=C_SECONDARY, spaceBefore=4*mm, spaceAfter=2*mm)
-S['h3'] = ParagraphStyle('WH3', fontName='SimKai', fontSize=11, leading=16,
+S['h3'] = ParagraphStyle('WH3', fontName='KaiTi', fontSize=11, leading=16,
                           textColor=C_SECONDARY, spaceBefore=3*mm, spaceAfter=1.5*mm)
-S['body'] = ParagraphStyle('WB', fontName='SimSun', fontSize=10, leading=17,
+S['body'] = ParagraphStyle('WB', fontName='SongTi', fontSize=10, leading=17,
                             textColor=C_BODY, alignment=TA_JUSTIFY, spaceAfter=1.5*mm,
                             firstLineIndent=20)
-S['body_ni'] = ParagraphStyle('WBN', fontName='SimSun', fontSize=10, leading=17,
+S['body_ni'] = ParagraphStyle('WBN', fontName='SongTi', fontSize=10, leading=17,
                                textColor=C_BODY, alignment=TA_JUSTIFY, spaceAfter=1.5*mm)
-S['quote'] = ParagraphStyle('WQ', fontName='SimKai', fontSize=9.5, leading=17,
+S['quote'] = ParagraphStyle('WQ', fontName='KaiTi', fontSize=9.5, leading=17,
                              textColor=HexColor("#5b4636"), spaceAfter=1.5*mm)
-S['th'] = ParagraphStyle('WTH', fontName='SimHei', fontSize=8.5, leading=13, textColor=white)
-S['tc'] = ParagraphStyle('WTC', fontName='SimSun', fontSize=8.5, leading=14, textColor=C_BODY)
+S['th'] = ParagraphStyle('WTH', fontName='HeiTi', fontSize=8.5, leading=13, textColor=white)
+S['tc'] = ParagraphStyle('WTC', fontName='SongTi', fontSize=8.5, leading=14, textColor=C_BODY)
 S['small'] = ParagraphStyle('WSM', fontName='NotoSansSC', fontSize=8, leading=12, textColor=C_GRAY)
-S['cover_title'] = ParagraphStyle('WCT', fontName='SimHei', fontSize=26, leading=38,
+S['cover_title'] = ParagraphStyle('WCT', fontName='HeiTi', fontSize=26, leading=38,
                                    textColor=C_PRIMARY, alignment=TA_CENTER, spaceAfter=8*mm)
 
 # ── Helpers ──
@@ -262,8 +262,8 @@ def parse_inline(text):
     text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
     # Italic: *text* -> <i>text</i>
     text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', text)
-    # Inline code: `text` -> <font face="SimKai">text</font>
-    text = re.sub(r'`([^`]+)`', r'<font face="SimKai">\1</font>', text)
+    # Inline code: `text` -> <font face="KaiTi">text</font>
+    text = re.sub(r'`([^`]+)`', r'<font face="KaiTi">\1</font>', text)
     # Star emoji ⭐
     text = text.replace('⭐', '<font color="#c0392b">⭐</font>')
     # Arrow
